@@ -89,6 +89,22 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--ink); outli
 .time:nth-child(5) span { margin: 0; align-self: flex-end; padding-bottom: 6px; }
 .note { margin-top: 26px; color: var(--ink-soft); font-size: .95rem; text-align: center; }
 
+.back { background: none; color: var(--ink-soft); font-size: 1rem; padding: 8px 0; margin-bottom: 10px; }
+.choices { display: grid; gap: 16px; margin-top: 26px; }
+.choice { width: 100%; display: flex; flex-direction: column; align-items: flex-start; gap: 6px; padding: 30px 26px; color: var(--on-pastel); text-align: left; transition: transform .15s ease; }
+.choice:active { transform: scale(.97); }
+.choice .em { font-size: 2.4rem; line-height: 1; }
+.choice b { font-size: 1.8rem; font-weight: 600; line-height: 1.15; }
+.choice span { opacity: .8; font-size: 1rem; }
+.name-row { margin-top: 22px; display: grid; gap: 8px; }
+.name-row label { color: var(--ink-soft); }
+.name-fields { display: flex; gap: 10px; }
+.name-fields input { flex: 1; min-width: 0; font: inherit; color: var(--ink); background: var(--card); border: 2px solid var(--line); border-radius: 18px; padding: 12px 16px; }
+.name-fields input::placeholder { color: var(--ink-soft); opacity: .7; }
+.name-fields .btn { padding: 12px 22px; }
+#pick-homework { background: var(--sky); border-radius: 40px 30px 30px 30px; }
+#pick-learn { background: var(--mint); border-radius: 30px 40px 30px 30px; }
+
 /* Timer */
 #screen-timer, #screen-reward, #screen-settings { flex: 1; }
 .center { display: flex; flex-direction: column; align-items: center; text-align: center; }
@@ -137,12 +153,40 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--ink); outli
 <body>
 <main class="app">
 
-  <!-- Start -->
-  <section id="screen-home">
+  <!-- Keuze -->
+  <section id="screen-start">
+    <span class="brand">You can do this ✨</span>
+    <h1 id="start-title">Wat ga je doen?</h1>
+    <p class="sub">Kies wat bij jou past.</p>
+    <div class="name-row" id="name-row">
+      <label for="name-input">Hoe heet je?</label>
+      <div class="name-fields">
+        <input id="name-input" type="text" maxlength="20" autocomplete="given-name" placeholder="Jouw naam">
+        <button class="btn mint" id="name-ok">Klaar</button>
+      </div>
+    </div>
+    <button class="back" id="name-edit" hidden>Naam wijzigen</button>
+    <div class="choices">
+      <button class="choice" id="pick-homework">
+        <span class="em" aria-hidden="true">📝</span>
+        <b>Ik ga huiswerk maken</b>
+        <span>Opdrachten en taken afmaken</span>
+      </button>
+      <button class="choice" id="pick-learn">
+        <span class="em" aria-hidden="true">📚</span>
+        <b>Ik ga leren</b>
+        <span>Stampen, oefenen en herhalen</span>
+      </button>
+    </div>
+  </section>
+
+  <!-- Tijd kiezen -->
+  <section id="screen-home" hidden>
+    <button class="back" id="back-start">← Andere keuze</button>
     <div class="top">
       <div>
         <span class="brand">You can do this ✨</span>
-        <h1>Hoe lang ga je leren?</h1>
+        <h1 id="home-title">Hoe lang ga je leren?</h1>
         <p class="sub">Kies een tijd. Als je klaar bent, wacht er een verrassing.</p>
       </div>
       <button class="icon-btn" id="open-settings" aria-label="Mijn beloningen aanpassen">✏️</button>
@@ -217,7 +261,7 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--ink); outli
   var RING = 2 * Math.PI * 88;
 
   var $ = function (id) { return document.getElementById(id); };
-  var screens = ["home", "timer", "reward", "settings"];
+  var screens = ["start", "home", "timer", "reward", "settings"];
   function show(name) {
     screens.forEach(function (s) { $("screen-" + s).hidden = (s !== name); });
     window.scrollTo(0, 0);
@@ -255,14 +299,56 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--ink); outli
   }
   updateNote();
 
+  /* ---------- keuzescherm ---------- */
+  var ACT = {
+    leren: { title: "Hoe lang ga je leren?", timer: "Je bent aan het leren", done: "geleerd" },
+    huiswerk: { title: "Hoe lang ga je huiswerk maken?", timer: "Je bent huiswerk aan het maken", done: "aan je huiswerk gewerkt" }
+  };
+  var activity = "leren";
+
+  /* naam */
+  var playerName = load("leer.name", "");
+  if (typeof playerName !== "string") playerName = "";
+  var editingName = false;
+  function fill(s) { return s.replace("{n}", playerName ? ", " + playerName : ""); }
+  function renderName() {
+    $("start-title").textContent = playerName ? "Hoi " + playerName + "! Wat ga je doen?" : "Wat ga je doen?";
+    $("name-row").hidden = !!playerName && !editingName;
+    $("name-edit").hidden = !playerName || editingName;
+  }
+  function saveName() {
+    playerName = $("name-input").value.trim().slice(0, 20);
+    save("leer.name", playerName);
+    editingName = false;
+    renderName();
+  }
+  $("name-ok").addEventListener("click", saveName);
+  $("name-input").addEventListener("keydown", function (e) { if (e.key === "Enter") saveName(); });
+  $("name-edit").addEventListener("click", function () {
+    editingName = true;
+    $("name-input").value = playerName;
+    renderName();
+    $("name-input").focus();
+  });
+  function choose(a) {
+    activity = a;
+    $("home-title").textContent = ACT[a].title;
+    $("timer-title").textContent = ACT[a].timer;
+    show("home");
+  }
+  $("pick-homework").addEventListener("click", function () { choose("huiswerk"); });
+  $("pick-learn").addEventListener("click", function () { choose("leren"); });
+  $("back-start").addEventListener("click", function () { show("start"); });
+  renderName();
+
   /* ---------- timer ---------- */
   var total = 0, endAt = 0, remaining = 0, paused = false, tick = null, chosen = 0;
   var PHRASES = [
-    ["Het begin is het moeilijkst, en jij bent al bezig!", "Mooi gestart. Je bent onderweg!", "Eerst even inkomen, daarna gaat het lopen."],
-    ["Goed bezig! Hou dit vast.", "Je ritme zit erin.", "Stap voor stap kom je er."],
-    ["Je bent op de helft! 🎉", "De helft is al gedaan. Wat goed!"],
-    ["Het meeste heb je al gedaan. Doorgaan!", "Elke minuut telt, en jij telt ze allemaal.", "Je kunt dit. Dat laat je nu zien."],
-    ["Bijna daar! Je beloning wacht al. 🎁", "Nog even volhouden, je bent er bijna!", "De finish is in zicht! 💜"]
+    ["Het begin is het moeilijkst, en jij bent al bezig{n}!", "Mooi gestart{n}. Je bent onderweg!", "Eerst even inkomen, daarna gaat het lopen."],
+    ["Goed bezig{n}! Hou dit vast.", "Je ritme zit erin.", "Stap voor stap kom je er."],
+    ["Je bent op de helft{n}! 🎉", "De helft is al gedaan. Wat goed!"],
+    ["Het meeste heb je al gedaan{n}. Doorgaan!", "Elke minuut telt, en jij telt ze allemaal.", "Je kunt dit{n}. Dat laat je nu zien."],
+    ["Bijna daar{n}! Je beloning wacht al. 🎁", "Nog even volhouden, je bent er bijna!", "De finish is in zicht{n}! 💜"]
   ];
   var lastStage = -1;
   function stageFor(done) { return done < 0.2 ? 0 : done < 0.45 ? 1 : done < 0.6 ? 2 : done < 0.85 ? 3 : 4; }
@@ -297,7 +383,7 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--ink); outli
       if (st !== lastStage) {
         lastStage = st;
         var opts = PHRASES[st];
-        $("timer-sub").textContent = opts[Math.floor(Math.random() * opts.length)];
+        $("timer-sub").textContent = fill(opts[Math.floor(Math.random() * opts.length)]);
       }
     }
     document.title = (paused ? "⏸ " : "") + fmt(left) + " · You can do this";
@@ -313,7 +399,7 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--ink); outli
       paused = true;
       $("pause").textContent = "Verder";
       $("clock-label").textContent = "pauze";
-      $("timer-sub").textContent = "Even adem halen. Je mag zo weer verder.";
+      $("timer-sub").textContent = fill("Even adem halen{n}. Je mag zo weer verder.");
     } else {
       endAt = Date.now() + remaining;
       paused = false;
@@ -327,7 +413,7 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--ink); outli
     if (confirm("Weet je het zeker? Als je nu stopt, krijg je geen beloning.")) {
       clearInterval(tick);
       document.title = "You can do this";
-      show("home");
+      show("start");
     }
   });
 
@@ -374,13 +460,14 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--ink); outli
     document.title = "You can do this";
     var idx = pickReward();
     if (idx >= 0) { lastReward = idx; save("leer.last", idx); }
-    $("reward-sub").textContent = "Je hebt " + chosen + " minuten geleerd. Dit is je beloning:";
+    $("reward-head").textContent = playerName ? "Gelukt, " + playerName + "!" : "Gelukt!";
+    $("reward-sub").textContent = "Je hebt " + chosen + " minuten " + ACT[activity].done + ". Dit is je beloning:";
     $("reward-text").textContent = idx >= 0 ? rewards[idx] : "Je mag zelf iets leuks verzinnen!";
     show("reward");
     confetti();
     beep();
   }
-  $("again").addEventListener("click", function () { $("confetti").innerHTML = ""; show("home"); });
+  $("again").addEventListener("click", function () { $("confetti").innerHTML = ""; show("start"); });
 
   /* ---------- instellingen ---------- */
   var listEl = $("reward-list");

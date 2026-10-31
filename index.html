@@ -105,6 +105,29 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--ink); outli
 #pick-homework { background: var(--sky); border-radius: 40px 30px 30px 30px; }
 #pick-learn { background: var(--mint); border-radius: 30px 40px 30px 30px; }
 
+/* Statistieken */
+.stats-btn { margin-top: 22px; width: 100%; }
+.week-nav { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 20px 0 18px; }
+.week-nav b { font-size: 1.2rem; font-weight: 600; text-align: center; }
+.week-nav .icon-btn { font-size: 1.6rem; line-height: 1; }
+.week-nav .icon-btn:disabled { opacity: .35; cursor: default; }
+.chart { display: flex; gap: 8px; align-items: flex-end; }
+.col { flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: center; gap: 6px; }
+.col .val { font-size: .85rem; color: var(--ink-soft); min-height: 1.3em; white-space: nowrap; }
+.col .bar { width: 100%; height: 170px; display: flex; flex-direction: column; justify-content: flex-end; background: var(--card); border: 2px solid var(--line); border-radius: 16px 16px 8px 8px; overflow: hidden; }
+.col .seg { width: 100%; min-height: 4px; }
+.col .seg.leren { background: var(--mint); }
+.col .seg.huiswerk { background: var(--sky); }
+.col .day { font-size: .95rem; padding: 2px 8px; border-radius: 999px; }
+.col.today .day { background: var(--lilac); color: var(--on-pastel); font-weight: 600; }
+.legend { display: flex; gap: 18px; justify-content: center; margin: 18px 0 20px; color: var(--ink-soft); font-size: .95rem; }
+.legend span::before { content: ""; display: inline-block; width: 14px; height: 14px; border-radius: 50%; margin-right: 6px; vertical-align: -2px; }
+.legend .l-leren::before { background: var(--mint); }
+.legend .l-huiswerk::before { background: var(--sky); }
+.total-card { background: var(--butter); color: var(--on-pastel); border-radius: 28px; padding: 22px 22px; text-align: center; }
+.total-card b { display: block; font-size: 2rem; font-weight: 600; line-height: 1.15; }
+.total-card span { display: block; margin-top: 6px; opacity: .85; }
+
 /* Timer */
 #screen-timer, #screen-reward, #screen-settings { flex: 1; }
 .center { display: flex; flex-direction: column; align-items: center; text-align: center; }
@@ -178,6 +201,7 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--ink); outli
         <span>Stampen, oefenen en herhalen</span>
       </button>
     </div>
+    <button class="btn ghost stats-btn" id="open-stats">📊 Mijn week</button>
   </section>
 
   <!-- Tijd kiezen -->
@@ -227,6 +251,24 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--ink); outli
     <button class="btn mint" id="again">Terug naar start</button>
   </section>
 
+  <!-- Statistieken -->
+  <section id="screen-stats" hidden>
+    <button class="back" id="stats-back">← Terug</button>
+    <h1>Mijn week</h1>
+    <p class="sub" id="stats-range"></p>
+    <div class="week-nav">
+      <button class="icon-btn" id="week-prev" aria-label="Vorige week">‹</button>
+      <b id="week-label"></b>
+      <button class="icon-btn" id="week-next" aria-label="Volgende week">›</button>
+    </div>
+    <div class="chart" id="chart" role="img"></div>
+    <div class="legend"><span class="l-leren">Leren</span><span class="l-huiswerk">Huiswerk</span></div>
+    <div class="total-card">
+      <b id="week-total"></b>
+      <span id="week-msg"></span>
+    </div>
+  </section>
+
   <!-- Beloningen invullen -->
   <section id="screen-settings" hidden>
     <h1>Mijn beloningen</h1>
@@ -261,7 +303,7 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--ink); outli
   var RING = 2 * Math.PI * 88;
 
   var $ = function (id) { return document.getElementById(id); };
-  var screens = ["start", "home", "timer", "reward", "settings"];
+  var screens = ["start", "home", "timer", "reward", "settings", "stats"];
   function show(name) {
     screens.forEach(function (s) { $("screen-" + s).hidden = (s !== name); });
     window.scrollTo(0, 0);
@@ -340,6 +382,91 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--ink); outli
   $("pick-learn").addEventListener("click", function () { choose("leren"); });
   $("back-start").addEventListener("click", function () { show("start"); });
   renderName();
+
+  /* ---------- statistieken ---------- */
+  var sessions = load("leer.sessions", []);
+  if (!Array.isArray(sessions)) sessions = [];
+  var weekOffset = 0;
+  var DAYS = ["Ma", "Di", "Wo", "Do", "Vr", "Za", "Zo"];
+  var MONTHS = ["jan", "feb", "mrt", "apr", "mei", "jun", "jul", "aug", "sep", "okt", "nov", "dec"];
+  function dayKey(d) {
+    var m = d.getMonth() + 1, dd = d.getDate();
+    return d.getFullYear() + "-" + (m < 10 ? "0" : "") + m + "-" + (dd < 10 ? "0" : "") + dd;
+  }
+  function recordSession(min, act) {
+    sessions.push({ d: dayKey(new Date()), m: min, a: act });
+    if (sessions.length > 600) sessions = sessions.slice(-600);
+    save("leer.sessions", sessions);
+  }
+  function mondayOf(offset) {
+    var d = new Date();
+    d.setHours(12, 0, 0, 0);
+    d.setDate(d.getDate() - ((d.getDay() + 6) % 7) + offset * 7);
+    return d;
+  }
+  function fmtMin(t) {
+    if (t < 60) return t + " min";
+    var h = Math.floor(t / 60), r = t % 60;
+    return h + " uur" + (r ? " " + r + " min" : "");
+  }
+  function renderStats() {
+    var mon = mondayOf(weekOffset), sun = new Date(mon);
+    sun.setDate(mon.getDate() + 6);
+    var todayKey = dayKey(new Date()), days = [], i;
+    for (i = 0; i < 7; i++) {
+      var d = new Date(mon);
+      d.setDate(mon.getDate() + i);
+      days.push({ key: dayKey(d), leren: 0, huiswerk: 0 });
+    }
+    sessions.forEach(function (s) {
+      days.forEach(function (x) {
+        if (x.key === s.d) { if (s.a === "huiswerk") x.huiswerk += s.m; else x.leren += s.m; }
+      });
+    });
+    var totals = days.map(function (x) { return x.leren + x.huiswerk; });
+    var total = totals.reduce(function (a, b) { return a + b; }, 0);
+    var max = Math.max.apply(null, totals.concat([60]));
+
+    var chart = $("chart");
+    chart.innerHTML = "";
+    var summary = [];
+    days.forEach(function (x, idx) {
+      var col = document.createElement("div");
+      col.className = "col" + (x.key === todayKey ? " today" : "");
+      var val = document.createElement("div");
+      val.className = "val";
+      val.textContent = totals[idx] ? totals[idx] + " min" : "";
+      var bar = document.createElement("div");
+      bar.className = "bar";
+      ["huiswerk", "leren"].forEach(function (k) {
+        if (x[k] > 0) {
+          var seg = document.createElement("div");
+          seg.className = "seg " + k;
+          seg.style.height = (x[k] / max * 100) + "%";
+          bar.appendChild(seg);
+        }
+      });
+      var lab = document.createElement("div");
+      lab.className = "day";
+      lab.textContent = DAYS[idx];
+      col.appendChild(val); col.appendChild(bar); col.appendChild(lab);
+      chart.appendChild(col);
+      summary.push(DAYS[idx] + " " + totals[idx] + " minuten");
+    });
+    chart.setAttribute("aria-label", "Minuten per dag: " + summary.join(", "));
+
+    $("week-label").textContent = weekOffset === 0 ? "Deze week" : weekOffset === -1 ? "Vorige week" : "Week van " + mon.getDate() + " " + MONTHS[mon.getMonth()];
+    $("stats-range").textContent = mon.getDate() + " " + MONTHS[mon.getMonth()] + " t/m " + sun.getDate() + " " + MONTHS[sun.getMonth()];
+    $("week-next").disabled = weekOffset >= 0;
+    $("week-total").textContent = total ? fmtMin(total) + " gewerkt" : "Nog niets";
+    $("week-msg").textContent = total
+      ? (weekOffset === 0 ? fill("Goed bezig{n}! Dit heb je deze week al gedaan.") : "Dit heb je die week gedaan.")
+      : (weekOffset === 0 ? "Tijd om te starten, je kunt dit!" : "In deze week heb je niets bijgehouden.");
+  }
+  $("open-stats").addEventListener("click", function () { weekOffset = 0; renderStats(); show("stats"); });
+  $("stats-back").addEventListener("click", function () { show("start"); });
+  $("week-prev").addEventListener("click", function () { weekOffset--; renderStats(); });
+  $("week-next").addEventListener("click", function () { if (weekOffset < 0) { weekOffset++; renderStats(); } });
 
   /* ---------- timer ---------- */
   var total = 0, endAt = 0, remaining = 0, paused = false, tick = null, chosen = 0;
@@ -458,6 +585,7 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--ink); outli
   function finish() {
     clearInterval(tick);
     document.title = "You can do this";
+    recordSession(chosen, activity);
     var idx = pickReward();
     if (idx >= 0) { lastReward = idx; save("leer.last", idx); }
     $("reward-head").textContent = playerName ? "Gelukt, " + playerName + "!" : "Gelukt!";

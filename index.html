@@ -44,6 +44,18 @@
   --line: #4a3f61;
   color-scheme: dark;
 }
+/* Thema's (Pastel is de standaard hierboven) */
+:root[data-pal="voetbal"] {
+  --bg: #e4f4e8; --ink: #10331c; --ink-soft: #4b6f58; --card: #ffffff; --line: #bfe0c9;
+  --lilac: #86dc96; --mint: #a8e6b2; --peach: #ffcf99; --butter: #ffe680; --sky: #a8d4ff; --rose: #ffb8b8;
+  --on-pastel: #10331c; color-scheme: light;
+}
+:root[data-pal="voetbal"] body { background: repeating-linear-gradient(90deg, #e4f4e8 0 56px, #d9eede 56px 112px); }
+:root[data-pal="rustig"] {
+  --bg: #eaf1ef; --ink: #2f4a4a; --ink-soft: #526e6d; --card: #fafcfb; --line: #d0e0dc;
+  --lilac: #bcd8d0; --mint: #cfe7d9; --peach: #ecd8c8; --butter: #efe7cd; --sky: #cfe1eb; --rose: #e9d6da;
+  --on-pastel: #2f4a4a; color-scheme: light;
+}
 html { scroll-padding-top: env(safe-area-inset-top, 0px); }
 *, *::before, *::after { box-sizing: border-box; }
 html, body { margin: 0; min-height: 100%; }
@@ -104,6 +116,35 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--ink); outli
 .name-fields .btn { padding: 12px 22px; }
 #pick-homework { background: var(--sky); border-radius: 40px 30px 30px 30px; }
 #pick-learn { background: var(--mint); border-radius: 30px 40px 30px 30px; }
+
+/* Streak, weekdoel, thema, tips */
+.top-row { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 14px; }
+.top-row .icons { display: flex; gap: 8px; }
+.status { display: grid; gap: 12px; margin-top: 22px; }
+.streak { display: inline-flex; align-items: center; justify-self: start; background: var(--peach); color: var(--on-pastel); padding: 8px 16px; border-radius: 999px; font-weight: 500; font-size: 1rem; }
+.goal-mini { background: var(--card); border: 2px solid var(--line); border-radius: 22px; padding: 12px 16px; font-size: 1rem; }
+.progress { height: 12px; border-radius: 999px; background: var(--line); overflow: hidden; margin-top: 8px; }
+.progress i { display: block; height: 100%; width: 0; background: var(--mint); border-radius: 999px; transition: width .5s ease; }
+.goal-card { background: var(--card); border: 2px solid var(--line); border-radius: 28px; padding: 20px 22px; margin-top: 16px; }
+.stepper { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 12px 0 6px; }
+.stepper b { font-size: 1.6rem; font-weight: 600; }
+.stepper .icon-btn { font-size: 1.6rem; line-height: 1; }
+.stepper .icon-btn:disabled { opacity: .35; cursor: default; }
+.extra { white-space: pre-line; margin: -8px 0 24px; font-size: 1.05rem; }
+.sec { margin-top: 22px; }
+.chips { display: flex; gap: 10px; flex-wrap: wrap; margin: 12px 0 8px; }
+.chip { padding: 12px 18px; border-radius: 999px; background: var(--card); border: 2px solid var(--line); font-size: 1rem; }
+.chip.active { background: var(--lilac); color: var(--on-pastel); border-color: var(--ink); }
+.overlay { position: fixed; inset: 0; z-index: 50; background: rgba(40, 30, 60, .5); display: flex; align-items: center; justify-content: center; padding: calc(20px + env(safe-area-inset-top, 0px)) 20px calc(20px + env(safe-area-inset-bottom, 0px)); }
+.intro-card { background: var(--card); color: var(--ink); width: 100%; max-width: 420px; border-radius: 32px; padding: 30px 26px 24px; text-align: center; box-shadow: 0 20px 60px rgba(0, 0, 0, .25); }
+.intro-em { font-size: 3.2rem; line-height: 1; }
+.intro-card h2 { margin-top: 12px; }
+.intro-card p { margin-top: 10px; color: var(--ink-soft); min-height: 5.6em; }
+.dots { display: flex; gap: 8px; justify-content: center; margin: 14px 0; }
+.dots i { width: 10px; height: 10px; border-radius: 50%; background: var(--line); }
+.dots i.on { background: var(--ink); }
+.skip-check { display: flex; gap: 8px; align-items: center; justify-content: center; font-size: .95rem; color: var(--ink-soft); margin-bottom: 16px; cursor: pointer; }
+.skip-check input { width: 20px; height: 20px; accent-color: var(--ink); }
 
 /* Statistieken */
 .stats-btn { margin-top: 22px; width: 100%; }
@@ -178,7 +219,13 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--ink); outli
 
   <!-- Keuze -->
   <section id="screen-start">
-    <span class="brand">You can do this ✨</span>
+    <div class="top-row">
+      <span class="brand">You can do this ✨</span>
+      <div class="icons">
+        <button class="icon-btn" id="open-tips" aria-label="Tips: hoe werkt de app?">💡</button>
+        <button class="icon-btn" id="open-settings-start" aria-label="Instellingen">⚙️</button>
+      </div>
+    </div>
     <h1 id="start-title">Wat ga je doen?</h1>
     <p class="sub">Kies wat bij jou past.</p>
     <div class="name-row" id="name-row">
@@ -189,6 +236,13 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--ink); outli
       </div>
     </div>
     <button class="back" id="name-edit" hidden>Naam wijzigen</button>
+    <div class="status" id="status">
+      <div class="streak" id="streak"></div>
+      <div class="goal-mini" id="goal-mini">
+        <span id="goal-mini-text"></span>
+        <div class="progress"><i id="goal-mini-bar"></i></div>
+      </div>
+    </div>
     <div class="choices">
       <button class="choice" id="pick-homework">
         <span class="em" aria-hidden="true">📝</span>
@@ -248,6 +302,7 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--ink); outli
       <div class="emoji" aria-hidden="true">🎁</div>
       <p id="reward-text"></p>
     </div>
+    <p class="sub extra" id="reward-extra"></p>
     <button class="btn mint" id="again">Terug naar start</button>
   </section>
 
@@ -256,6 +311,7 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--ink); outli
     <button class="back" id="stats-back">← Terug</button>
     <h1>Mijn week</h1>
     <p class="sub" id="stats-range"></p>
+    <div class="streak" id="streak-stats" style="margin-top:12px"></div>
     <div class="week-nav">
       <button class="icon-btn" id="week-prev" aria-label="Vorige week">‹</button>
       <b id="week-label"></b>
@@ -267,11 +323,24 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--ink); outli
       <b id="week-total"></b>
       <span id="week-msg"></span>
     </div>
+    <div class="goal-card" id="goal-card">
+      <h2>Weekdoel</h2>
+      <div class="stepper">
+        <button class="icon-btn" id="goal-minus" aria-label="Weekdoel lager (30 minuten)">−</button>
+        <b id="goal-val"></b>
+        <button class="icon-btn" id="goal-plus" aria-label="Weekdoel hoger (30 minuten)">+</button>
+      </div>
+      <div class="progress" id="goal-progress"><i id="goal-bar"></i></div>
+      <p class="sub" id="goal-text"></p>
+    </div>
   </section>
 
   <!-- Beloningen invullen -->
   <section id="screen-settings" hidden>
-    <h1>Mijn beloningen</h1>
+    <h1>Instellingen</h1>
+    <h2 class="sec">Thema</h2>
+    <div class="chips" id="theme-picker"></div>
+    <h2 class="sec">Mijn beloningen</h2>
     <p class="sub">Vul tot 10 beloningen in. De app kiest er na het leren één uit.</p>
     <ul class="list" id="reward-list"></ul>
     <div class="row" style="justify-content:flex-start">
@@ -282,6 +351,20 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--ink); outli
   </section>
 
 </main>
+
+<div class="overlay" id="intro" role="dialog" aria-modal="true" aria-labelledby="intro-title" hidden>
+  <div class="intro-card">
+    <div class="intro-em" id="intro-em" aria-hidden="true"></div>
+    <h2 id="intro-title"></h2>
+    <p id="intro-text"></p>
+    <div class="dots" id="intro-dots" aria-hidden="true"></div>
+    <label class="skip-check"><input type="checkbox" id="intro-off"> Niet meer tonen bij het opstarten</label>
+    <div class="row">
+      <button class="btn ghost" id="intro-skip">Overslaan</button>
+      <button class="btn mint" id="intro-next">Volgende</button>
+    </div>
+  </div>
+</div>
 
 <script>
 (function () {
@@ -306,6 +389,7 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--ink); outli
   var screens = ["start", "home", "timer", "reward", "settings", "stats"];
   function show(name) {
     screens.forEach(function (s) { $("screen-" + s).hidden = (s !== name); });
+    if (name === "start") renderStatus();
     window.scrollTo(0, 0);
   }
 
@@ -462,11 +546,167 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--ink); outli
     $("week-msg").textContent = total
       ? (weekOffset === 0 ? fill("Goed bezig{n}! Dit heb je deze week al gedaan.") : "Dit heb je die week gedaan.")
       : (weekOffset === 0 ? "Tijd om te starten, je kunt dit!" : "In deze week heb je niets bijgehouden.");
+    renderGoal(total);
+    renderStreak();
   }
   $("open-stats").addEventListener("click", function () { weekOffset = 0; renderStats(); show("stats"); });
   $("stats-back").addEventListener("click", function () { show("start"); });
   $("week-prev").addEventListener("click", function () { weekOffset--; renderStats(); });
   $("week-next").addEventListener("click", function () { if (weekOffset < 0) { weekOffset++; renderStats(); } });
+
+  /* ---------- streak en weekdoel ---------- */
+  var goal = Number(load("leer.goal", 120));
+  if (!(goal >= 0 && goal <= 1200)) goal = 120;
+  var settingsFrom = "home";
+  function weekKeys(offset) {
+    var mon = mondayOf(offset), keys = [], i;
+    for (i = 0; i < 7; i++) {
+      var d = new Date(mon);
+      d.setDate(mon.getDate() + i);
+      keys.push(dayKey(d));
+    }
+    return keys;
+  }
+  function weekMinutes(offset) {
+    var keys = weekKeys(offset), sum = 0;
+    sessions.forEach(function (s) { if (keys.indexOf(s.d) > -1) sum += s.m; });
+    return sum;
+  }
+  function calcStreak() {
+    var set = {}, n = 0, d = new Date();
+    sessions.forEach(function (s) { set[s.d] = 1; });
+    d.setHours(12, 0, 0, 0);
+    if (!set[dayKey(d)]) d.setDate(d.getDate() - 1);
+    while (set[dayKey(d)]) { n++; d.setDate(d.getDate() - 1); }
+    return n;
+  }
+  function renderStreak() {
+    var n = calcStreak(), todayKey = dayKey(new Date());
+    var doneToday = sessions.some(function (s) { return s.d === todayKey; });
+    var txt = n === 0 ? "🌱 Start vandaag je streak!"
+      : "🔥 " + n + (n === 1 ? " dag" : " dagen") + " op rij" + (doneToday ? "" : " · leer vandaag om hem te houden");
+    $("streak").textContent = txt;
+    $("streak-stats").textContent = txt;
+  }
+  function renderStatus() {
+    renderStreak();
+    var wk = weekMinutes(0);
+    $("goal-mini").hidden = !goal;
+    if (goal) {
+      $("goal-mini-text").textContent = wk >= goal ? "Weekdoel gehaald! 🎉 (" + wk + " min)" : "Weekdoel: " + wk + " van " + goal + " min";
+      $("goal-mini-bar").style.width = Math.min(100, wk / goal * 100) + "%";
+    }
+  }
+  function renderGoal(weekTotal) {
+    $("goal-card").hidden = weekOffset !== 0;
+    $("goal-val").textContent = goal ? fmtMin(goal) : "Uit";
+    $("goal-minus").disabled = goal <= 0;
+    $("goal-plus").disabled = goal >= 1200;
+    $("goal-progress").hidden = !goal;
+    var pct = goal ? Math.min(100, weekTotal / goal * 100) : 0;
+    $("goal-bar").style.width = pct + "%";
+    $("goal-text").textContent = !goal ? "Je hebt geen weekdoel. Tik op + om er een in te stellen."
+      : weekTotal >= goal ? fill("Weekdoel gehaald{n}! 🎉")
+      : "Nog " + fmtMin(goal - weekTotal) + " te gaan (" + Math.round(pct) + "% klaar)";
+  }
+  function changeGoal(delta) {
+    goal = Math.max(0, Math.min(1200, goal + delta));
+    save("leer.goal", goal);
+    renderStats();
+    renderStatus();
+  }
+  $("goal-minus").addEventListener("click", function () { changeGoal(-30); });
+  $("goal-plus").addEventListener("click", function () { changeGoal(30); });
+
+  /* ---------- thema's ---------- */
+  var THEMES = {
+    pastel: { label: "Pastel", em: "🌸", brand: "✨", gift: "🎁" },
+    voetbal: { label: "Voetbal", em: "⚽", brand: "⚽", gift: "🏆" },
+    rustig: { label: "Rustig", em: "🌿", brand: "🌿", gift: "🎁" }
+  };
+  var theme = load("leer.theme", "pastel");
+  if (!THEMES[theme]) theme = "pastel";
+  function applyTheme(t) {
+    theme = t;
+    var root = document.documentElement;
+    if (t === "pastel") root.removeAttribute("data-pal"); else root.setAttribute("data-pal", t);
+    Array.prototype.forEach.call(document.querySelectorAll(".brand"), function (b) {
+      b.textContent = "You can do this " + THEMES[t].brand;
+    });
+    document.querySelector(".reward-card .emoji").textContent = THEMES[t].gift;
+  }
+  function renderThemePicker() {
+    var box = $("theme-picker");
+    box.innerHTML = "";
+    Object.keys(THEMES).forEach(function (k) {
+      var b = document.createElement("button");
+      b.className = "chip" + (k === theme ? " active" : "");
+      b.setAttribute("aria-pressed", k === theme ? "true" : "false");
+      b.textContent = THEMES[k].em + " " + THEMES[k].label;
+      b.addEventListener("click", function () {
+        applyTheme(k);
+        save("leer.theme", k);
+        renderThemePicker();
+      });
+      box.appendChild(b);
+    });
+  }
+  $("open-settings-start").addEventListener("click", function () {
+    settingsFrom = "start";
+    buildList();
+    renderThemePicker();
+    $("saved").textContent = "";
+    show("settings");
+  });
+
+  /* ---------- tips bij het opstarten ---------- */
+  var SLIDES = [
+    { em: "👋", t: "Welkom{n}!", p: "Deze app helpt je om te leren. Jij kiest hoe lang, de app telt af en daarna wacht er een beloning." },
+    { em: "⏱️", t: "Kies wat en hoe lang", p: "Kies eerst: huiswerk maken of leren. Kies daarna 10, 20, 30, 45 of 60 minuten. Stop je eerder, dan telt de sessie niet mee." },
+    { em: "🎁", t: "Een verrassing als je klaar bent", p: "Is de tijd om, dan kiest de app een beloning uit jouw lijstje. Vul je eigen beloningen in via ⚙️ Instellingen." },
+    { em: "🔥", t: "Streak en weekdoel", p: "Leer je meerdere dagen achter elkaar, dan groeit je streak. Stel een weekdoel in en volg je voortgang bij 📊 Mijn week." },
+    { em: "🎨", t: "Maak het van jou", p: "Vul je naam in en kies een thema: Pastel, Voetbal of Rustig. Tik later op 💡 om deze tips terug te zien." }
+  ];
+  var introIdx = 0;
+  function renderIntro() {
+    var s = SLIDES[introIdx], last = introIdx === SLIDES.length - 1;
+    $("intro-em").textContent = s.em;
+    $("intro-title").textContent = fill(s.t);
+    $("intro-text").textContent = s.p;
+    var dots = $("intro-dots");
+    dots.innerHTML = "";
+    SLIDES.forEach(function (x, i) {
+      var dot = document.createElement("i");
+      if (i === introIdx) dot.className = "on";
+      dots.appendChild(dot);
+    });
+    $("intro-next").textContent = last ? "Aan de slag!" : "Volgende";
+    $("intro-skip").hidden = last;
+  }
+  function openIntro() {
+    introIdx = 0;
+    $("intro-off").checked = load("leer.introOff", false) === true;
+    renderIntro();
+    $("intro").hidden = false;
+    $("intro-next").focus();
+  }
+  function closeIntro() {
+    save("leer.introOff", $("intro-off").checked);
+    $("intro").hidden = true;
+  }
+  $("intro-next").addEventListener("click", function () {
+    if (introIdx >= SLIDES.length - 1) closeIntro(); else { introIdx++; renderIntro(); }
+  });
+  $("intro-skip").addEventListener("click", closeIntro);
+  $("open-tips").addEventListener("click", openIntro);
+  document.addEventListener("keydown", function (e) {
+    if (e.key === "Escape" && !$("intro").hidden) closeIntro();
+  });
+
+  /* starten */
+  applyTheme(theme);
+  renderStatus();
+  if (load("leer.introOff", false) !== true) openIntro();
 
   /* ---------- timer ---------- */
   var total = 0, endAt = 0, remaining = 0, paused = false, tick = null, chosen = 0;
@@ -588,6 +828,14 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--ink); outli
     recordSession(chosen, activity);
     var idx = pickReward();
     if (idx >= 0) { lastReward = idx; save("leer.last", idx); }
+    var extra = [], stk = calcStreak(), wk = weekMinutes(0);
+    extra.push(stk <= 1 ? "🔥 Je streak is begonnen!" : "🔥 " + stk + " dagen op rij!");
+    if (goal > 0) {
+      if (wk - chosen < goal && wk >= goal) extra.push("🎉 Je weekdoel is gehaald!");
+      else if (wk < goal) extra.push("Nog " + (goal - wk) + " min tot je weekdoel.");
+      else extra.push("Je weekdoel was al gehaald, dit is bonus! ⭐");
+    }
+    $("reward-extra").textContent = extra.join("\n");
     $("reward-head").textContent = playerName ? "Gelukt, " + playerName + "!" : "Gelukt!";
     $("reward-sub").textContent = "Je hebt " + chosen + " minuten " + ACT[activity].done + ". Dit is je beloning:";
     $("reward-text").textContent = idx >= 0 ? rewards[idx] : "Je mag zelf iets leuks verzinnen!";
@@ -618,9 +866,9 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--ink); outli
     });
   }
   $("open-settings").addEventListener("click", function () {
-    buildList(); $("saved").textContent = ""; show("settings");
+    settingsFrom = "home"; buildList(); renderThemePicker(); $("saved").textContent = ""; show("settings");
   });
-  $("cancel").addEventListener("click", function () { show("home"); });
+  $("cancel").addEventListener("click", function () { show(settingsFrom); });
   $("save").addEventListener("click", function () {
     var vals = Array.prototype.map.call(listEl.querySelectorAll("input"), function (i) { return i.value.trim(); });
     rewards = vals;
